@@ -101,21 +101,61 @@ public class PlayerScript : MonoBehaviour
         rb.velocity = currentMovement;
     }
 
+    TileData GetTileDataFromFloor(RaycastHit2D hitPoint)
+    {
+        var tilePos = hitPoint.point - new Vector2(0, .01f);
+        Vector3Int cellPosition = map.WorldToCell(tilePos);
+        TileBase collidedTile = map.GetTile(cellPosition);
+        Debug.Log(dataFromTiles[collidedTile]?.SpeedDirection);
+
+        return null;
+    }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
+        Debug.Log(collision.GetContact(0).normal);
         if(collision.gameObject.layer == 3)
         {
-            // Debug.Log(collision.gameObject.tag);
+            Vector2 hitPoint = collision.GetContact(0).point - collision.GetContact(0).normal * .01f;
+            Vector3Int cellPosition = map.WorldToCell(hitPoint);
+            TileBase collidedTile = map.GetTile(cellPosition);
 
-            // TileBase collidedTile = map.GetTile(Vector3Int.FloorToInt(collision.gameObject.transform.position));
-            TileBase collidedTile = map.GetTile(map.WorldToCell((Vector2)collision.GetContact(0).point));
+            if (collidedTile != null)
+            {
+                // if(!collidedTiles.Contains(collidedTile))
+                //     collidedTiles.Add(collidedTile);
+                // Debug.Log(dataFromTiles[collidedTile]?.SpeedDirection);
+                currentMovement += dataFromTiles[collidedTile].SpeedDirection;
+                
+                // Debug.Log(rb.velocity);
+            }
 
-            // Debug.Log(dataFromTiles[collidedTile]?.SpeedDirection);
-            // Debug.Log(collidedTile);
-            Instantiate(TestingDot, map.WorldToCell((Vector3)(Vector3Int.RoundToInt(collision.GetContact(0).point)) - new Vector3((float)0.5, (float)0.5, 0)), transform.rotation);
-            Debug.Log(Vector3Int.FloorToInt(collision.GetContact(0).point));
-            
         }
         
     }
+
+    void RunTileEffects(Vector2 checkingPoint)
+    {
+        
+    }
+
+    // void OnCollisionExit2D(Collision2D collision)
+    // {
+    //     if(collision.gameObject.layer == 3)
+    //     {
+    //         Vector2 hitPoint = collision.GetContact(0).point - collision.GetContact(0).normal * .01f;
+    //         Vector3Int cellPosition = map.WorldToCell(hitPoint);
+    //         TileBase collidedTile = map.GetTile(cellPosition);
+
+    //         if (collidedTile != null)
+    //         {
+    //             collidedTiles.Remove(collidedTile);
+    //             // Debug.Log(dataFromTiles[collidedTile]?.SpeedDirection);
+    //             // additionalImpulse = dataFromTiles[collidedTile].SpeedDirection;
+                
+    //             // Debug.Log(rb.velocity);
+    //         }
+    //     }
+        
+    // }
 }
