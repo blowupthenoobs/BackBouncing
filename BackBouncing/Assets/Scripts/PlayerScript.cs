@@ -23,6 +23,8 @@ public class PlayerScript : MonoBehaviour
     private Dictionary<TileBase, TileData> dataFromTiles;
 
     [SerializeField] GameObject TestingDot;
+    private Vector2 lastCheckedSpot;
+    [SerializeField] float distChangeThresholdForChecking;
     
     
     // Start is called before the first frame update
@@ -127,12 +129,13 @@ public class PlayerScript : MonoBehaviour
 
     void RunTileEffects(Vector2 checkingPoint)
     {
-        // Instantiate(TestingDot, checkingPoint, transform.rotation);
         Vector3Int cellPosition = map.WorldToCell(checkingPoint);
         TileBase collidedTile = map.GetTile(cellPosition);
 
-        if(collidedTile != null)
+        if(collidedTile != null && (checkingPoint - lastCheckedSpot).magnitude >= distChangeThresholdForChecking)
         {
+            // Instantiate(TestingDot, checkingPoint, transform.rotation);
+            lastCheckedSpot = checkingPoint;
             currentMovement += dataFromTiles[collidedTile].SpeedDirection;
         }
 
