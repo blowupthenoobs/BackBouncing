@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.UI;
 
 public class PlayerScript : MonoBehaviour
 {
@@ -35,6 +36,7 @@ public class PlayerScript : MonoBehaviour
 
 
     [SerializeField] Animator animator;
+    [SerializeField] GameObject cooldownIndicator;
     private bool ignoreFlip;    
     
     // Start is called before the first frame update
@@ -86,7 +88,7 @@ public class PlayerScript : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.F) && currentBounceCooldown >= bouncingCooldown)
         {
-            
+            currentBounceCooldown = 0;
             Time.timeScale = 0;
             choosingBounce = true;
         }
@@ -101,7 +103,7 @@ public class PlayerScript : MonoBehaviour
                 animator.SetTrigger("jump");    
             }
 
-            // Debug.Log(moveInput);
+            currentBounceCooldown += Time.deltaTime;
         }
         else
         {
@@ -183,6 +185,14 @@ public class PlayerScript : MonoBehaviour
         }
         else if(animator.GetCurrentAnimatorStateInfo(0).IsName("bounceSideAnimation"))
             ignoreFlip = false;
+        
+        if(currentBounceCooldown >= bouncingCooldown)
+            cooldownIndicator.SetActive(false);
+        else
+        {
+            cooldownIndicator.SetActive(true);
+            cooldownIndicator.GetComponent<Image>().fillAmount = currentBounceCooldown / bouncingCooldown;
+        }
     }
 
     void AnimateBounce(Vector2 bounceDirection)
