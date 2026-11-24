@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
@@ -28,8 +29,13 @@ public class PlayerScript : MonoBehaviour
 
     [SerializeField] GameObject TestingDot;
     private Vector2 lastCheckedSpot;
-    [SerializeField] float distChangeThresholdForChecking;
-    
+    [SerializeField] float distChangeThresholdForCheckingTiles;
+    [SerializeField] float bouncingCooldown;
+    private float currentBounceCooldown;
+
+
+    [SerializeField] Animator animator;
+    private bool ignoreFlip;    
     
     // Start is called before the first frame update
     void Awake()
@@ -70,7 +76,7 @@ public class PlayerScript : MonoBehaviour
             currentMovement.x = 0;
 
         RaycastHit2D[] tileHit = Physics2D.CircleCastAll(transform.position, tileCollisionCheckRadius, new Vector2(), 0, ~playerLayer);
-        Debug.Log(tileHit.Length);
+        // Debug.Log(tileHit.Length);
 
         foreach(RaycastHit2D hit in tileHit)
         {
@@ -78,9 +84,9 @@ public class PlayerScript : MonoBehaviour
                 RunTileEffects(hit.point - hit.normal * .01f);  
         }
 
-        if(Input.GetKeyDown(KeyCode.F))
+        if(Input.GetKeyDown(KeyCode.F) && currentBounceCooldown >= bouncingCooldown)
         {
-            // Debug.Log("Running");
+            
             Time.timeScale = 0;
             choosingBounce = true;
         }
@@ -90,7 +96,10 @@ public class PlayerScript : MonoBehaviour
         if(!choosingBounce)
         {
             if(Input.GetKeyDown(KeyCode.Space) && touchingGround)
+            {
                 rb.AddForce(transform.up * jumpPower, ForceMode2D.Impulse);
+                animator.SetTrigger("jump");    
+            }
 
             // Debug.Log(moveInput);
         }
@@ -105,10 +114,14 @@ public class PlayerScript : MonoBehaviour
             else if(Input.GetKeyDown(KeyCode.W))
                 BounceBack(new Vector2(0, 1));
         }
+
+        Animate();
     }
 
     void BounceBack(Vector2 bounceDirection = new Vector2())
     {
+        AnimateBounce(bounceDirection);
+
         choosingBounce = false;
         Time.timeScale = 1;
 
@@ -143,7 +156,7 @@ public class PlayerScript : MonoBehaviour
         Vector3Int cellPosition = map.WorldToCell(checkingPoint);
         TileBase collidedTile = map.GetTile(cellPosition);
 
-        if(collidedTile != null && (checkingPoint - lastCheckedSpot).magnitude >= distChangeThresholdForChecking)
+        if(collidedTile != null && (checkingPoint - lastCheckedSpot).magnitude >= distChangeThresholdForCheckingTiles)
         {
             // Instantiate(TestingDot, checkingPoint, transform.rotation);
             lastCheckedSpot = checkingPoint;
@@ -151,17 +164,40 @@ public class PlayerScript : MonoBehaviour
         }
 
     }
+    
+#region animationing
 
-    // void OnDrawGizmos()
-    // {
-    //     Vector3 center = transform.position;
-    //     int segments = 64;
+    void Animate()
+    {
+        animator.SetFloat("runningSpeed", Mathf.Abs(currentMovement.x));
+        animator.SetFloat("yVelocity", currentMovement.y);
+        animator.SetBool("touchingGround", touchingGround);
+        animator.SetBool("choosingBounce", choosingBounce);
 
-    //     for (int i = 0; i < segments; i++)
-    //     {
-    //         float theta = i * (2f * Mathf.PI / segments);
-    //         Gizmos.DrawSphere(new Vector3(center.x + wallCheckRadius * Mathf.Cos(theta),
-    //                                         center.y + wallCheckRadius * Mathf.Sin(theta), 0), 0.01f);
-    //     }
-    // }
+        if(!(animator.GetCurrentAnimatorStateInfo(0).IsName("bounceSideAnimation") || ignoreFlip))
+        {
+            if(currentMovement.x > 0)
+                animator.gameObject.GetComponent<SpriteRenderer>().flipX = false;
+            else if(currentMovement.x < 0)
+                animator.gameObject.GetComponent<SpriteRenderer>().flipX = true;
+        }
+        else if(animator.GetCurrentAnimatorStateInfo(0).IsName("bounceSideAnimation"))
+            ignoreFlip = false;
+    }
+
+    void AnimateBounce(Vector2 bounceDirection)
+    {
+        if(bounceDirection.y < 0)
+            animator.SetTrigger("bounceUp");
+        else if(bounceDirection.y > 0)
+            animator.SetTrigger("bounceDown");
+        else if(bounceDirection.x != 0)
+        {
+            animator.SetTrigger("bounceSide");
+            animator.gameObject.GetComponent<SpriteRenderer>().flipX = bounceDirection.x < 0;
+            ignoreFlip = true;
+        }
+    }
+
+#endregion animationing
 }
