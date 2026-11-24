@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -9,10 +10,13 @@ public class PlayerScript : MonoBehaviour
     [SerializeField] float moveSpeed;
     [SerializeField] float accellerationSpeed;
     private Vector2 currentMovement;
-    public Rigidbody2D rb;
+    private Rigidbody2D rb;
+    private CircleCollider2D col;
     private bool touchingGround;
     [SerializeField] float floorRaycastDist;
     [SerializeField] float wallRaycastDist;
+    [SerializeField] float wallCheckRadius;
+    [SerializeField] float tileCollisionCheckRadius;
     [SerializeField] float jumpPower;
     [SerializeField] LayerMask playerLayer;
     private bool choosingBounce;
@@ -30,6 +34,8 @@ public class PlayerScript : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
+        rb = gameObject.GetComponent<Rigidbody2D>();
+        col = gameObject.GetComponent<CircleCollider2D>();
         dataFromTiles = new Dictionary<TileBase, TileData>();
 
         foreach(var TileData in TileDatas)
@@ -54,18 +60,23 @@ public class PlayerScript : MonoBehaviour
             Debug.DrawRay(transform.position, -transform.up * floorRaycastDist, Color.red);
         // Debug.Log(hit == true);
         touchingGround = groundHit;
-
-        if(groundHit)
-        {
-            if(groundHit.collider.gameObject.layer == 3)
-                RunTileEffects(groundHit.point - groundHit.normal * .01f);  
-        }
         
-        RaycastHit2D wallHit = Physics2D.Raycast(transform.position, new Vector2(currentMovement.x, 0).normalized, wallRaycastDist, ~playerLayer);
+        RaycastHit2D wallHit = Physics2D.CircleCast(transform.position, wallCheckRadius, new Vector2(currentMovement.x, 0).normalized, wallRaycastDist, ~playerLayer);
+            Debug.DrawCircleCast(transform.position, wallCheckRadius, new Vector2(currentMovement.x, 0).normalized, 10, Color.red);
             Debug.DrawRay(transform.position, new Vector2(currentMovement.x, 0).normalized, Color.red);
+            // Debug.DrawLine(transform.position, new Vector2(currentMovement.x, 0).normalized, Color.red);
 
         if(wallHit)
             currentMovement.x = 0;
+
+        RaycastHit2D[] tileHit = Physics2D.CircleCastAll(transform.position, tileCollisionCheckRadius, new Vector2(), 0, ~playerLayer);
+        Debug.Log(tileHit.Length);
+
+        foreach(RaycastHit2D hit in tileHit)
+        {
+            if(hit.collider.gameObject.layer == 3)
+                RunTileEffects(hit.point - hit.normal * .01f);  
+        }
 
         if(Input.GetKeyDown(KeyCode.F))
         {
@@ -140,4 +151,17 @@ public class PlayerScript : MonoBehaviour
         }
 
     }
+
+    // void OnDrawGizmos()
+    // {
+    //     Vector3 center = transform.position;
+    //     int segments = 64;
+
+    //     for (int i = 0; i < segments; i++)
+    //     {
+    //         float theta = i * (2f * Mathf.PI / segments);
+    //         Gizmos.DrawSphere(new Vector3(center.x + wallCheckRadius * Mathf.Cos(theta),
+    //                                         center.y + wallCheckRadius * Mathf.Sin(theta), 0), 0.01f);
+    //     }
+    // }
 }

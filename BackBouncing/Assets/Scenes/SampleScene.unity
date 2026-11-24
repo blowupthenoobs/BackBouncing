@@ -437,9 +437,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 7
   accellerationSpeed: 5
-  rb: {fileID: 632019445}
   floorRaycastDist: 0.57
-  wallRaycastDist: 0.57
+  wallRaycastDist: 0.09
+  wallCheckRadius: 0.42
+  tileCollisionCheckRadius: 0.57
   jumpPower: 5
   playerLayer:
     serializedVersion: 2
@@ -450,6 +451,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 883e4242f19261744ac2f6fdfc5ae68d, type: 2}
   - {fileID: 11400000, guid: f1b070a1881a725479428a66aa6bb3af, type: 2}
   TestingDot: {fileID: 942252050545268931, guid: fb982aebb1dc92148b8ef89afa7975d3, type: 3}
+  distChangeThresholdForChecking: 0.4
 --- !u!1 &1002893625
 GameObject:
   m_ObjectHideFlags: 0
