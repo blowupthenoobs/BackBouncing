@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62d2a8ac85c8b534d91fe0bbbafe5c26, type: 3}
+  m_Name: SpeedLeft
+  m_EditorClassIdentifier: 
+  tiles:
+  - {fileID: 11400000, guid: 3ca8fa9429e8f4547b700444d1cd88ac, type: 2}
+  SpeedDirection: {x: -2, y: 0}

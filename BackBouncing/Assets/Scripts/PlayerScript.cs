@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine.UI;
 
@@ -31,6 +32,8 @@ public class PlayerScript : MonoBehaviour
     [SerializeField] GameObject TestingDot;
     private Vector2 lastCheckedSpot;
     [SerializeField] float distChangeThresholdForCheckingTiles;
+    [SerializeField] float timeThresholdForCheckingTiles;
+    private float timeSinceCheckingTiles;
     [SerializeField] float bouncingCooldown;
     private float currentBounceCooldown;
 
@@ -38,6 +41,8 @@ public class PlayerScript : MonoBehaviour
     [SerializeField] Animator animator;
     [SerializeField] GameObject cooldownIndicator;
     private bool ignoreFlip;    
+
+    [SerializeField] Vector2 lastCapturedPosition;
     
     // Start is called before the first frame update
     void Awake()
@@ -80,12 +85,6 @@ public class PlayerScript : MonoBehaviour
         RaycastHit2D[] tileHit = Physics2D.CircleCastAll(transform.position, tileCollisionCheckRadius, new Vector2(), 0, ~playerLayer);
         // Debug.Log(tileHit.Length);
 
-        foreach(RaycastHit2D hit in tileHit)
-        {
-            if(hit.collider.gameObject.layer == 3)
-                RunTileEffects(hit.point - hit.normal * .01f);  
-        }
-
         if(Input.GetKeyDown(KeyCode.F) && currentBounceCooldown >= bouncingCooldown)
         {
             currentBounceCooldown = 0;
@@ -97,8 +96,16 @@ public class PlayerScript : MonoBehaviour
 
         if(!choosingBounce)
         {
+            foreach(RaycastHit2D hit in tileHit)
+            {
+                if(hit.collider.gameObject.layer == 3)
+                    RunTileEffects(hit.point - hit.normal * .01f);  
+            }
+
             if(Input.GetKeyDown(KeyCode.Space) && touchingGround)
             {
+                currentMovement.y = 0;
+                rb.velocity = currentMovement;
                 rb.AddForce(transform.up * jumpPower, ForceMode2D.Impulse);
                 animator.SetTrigger("jump");    
             }
@@ -117,7 +124,11 @@ public class PlayerScript : MonoBehaviour
                 BounceBack(new Vector2(0, 1));
         }
 
+        SafteyNet();
         Animate();
+
+        if(Input.GetKeyDown(KeyCode.R))
+            SceneManager.LoadScene(0);
     }
 
     void BounceBack(Vector2 bounceDirection = new Vector2())
@@ -158,13 +169,51 @@ public class PlayerScript : MonoBehaviour
         Vector3Int cellPosition = map.WorldToCell(checkingPoint);
         TileBase collidedTile = map.GetTile(cellPosition);
 
-        if(collidedTile != null && (checkingPoint - lastCheckedSpot).magnitude >= distChangeThresholdForCheckingTiles)
+        if(collidedTile != null && ((checkingPoint - lastCheckedSpot).magnitude >= distChangeThresholdForCheckingTiles || timeSinceCheckingTiles >= timeThresholdForCheckingTiles))
         {
             // Instantiate(TestingDot, checkingPoint, transform.rotation);
             lastCheckedSpot = checkingPoint;
-            currentMovement += dataFromTiles[collidedTile].SpeedDirection;
+            currentMovement += new Vector2(dataFromTiles[collidedTile].SpeedDirection.x, 0);
+            rb.AddForce(new Vector2(0, dataFromTiles[collidedTile].SpeedDirection.y), ForceMode2D.Impulse);
+        }
+        else
+            timeSinceCheckingTiles += Time.deltaTime;
+
+    }
+
+    void SafteyNet()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(lastCapturedPosition, ((Vector2)transform.position - lastCapturedPosition).normalized, ((Vector2)transform.position - lastCapturedPosition).magnitude);
+        
+        if(hit.collider != col)
+        {
+            Debug.Log(hit.point);
+            transform.position = hit.point + (((Vector2)transform.position - lastCapturedPosition).normalized * .01f);
+            currentMovement = Vector2.zero;
+            rb.velocity = currentMovement;    
         }
 
+        lastCapturedPosition = transform.position;
+
+        // Vector2 movementDirection = (Vector2)transform.position - lastCapturedPosition;
+        // float movementDistance = movementDirection.magnitude;
+
+        // // RaycastHit2D hit = Physics2D.Raycast(
+        // //     lastCapturedPosition,
+        // //     movementDirection.normalized,
+        // //     movementDistance
+        // // );
+
+        // if (hit.collider != null && hit.collider != col)
+        // {
+        //     Debug.Log(hit.point);
+
+        //     transform.position = hit.point;
+        //     currentMovement = Vector2.zero;
+        //     rb.velocity = Vector2.zero;
+        // }
+
+        // lastCapturedPosition = transform.position;
     }
     
 #region animationing
